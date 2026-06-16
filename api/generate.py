@@ -86,7 +86,7 @@ Skriv nå den fullstendige konsesjonssøknaden."""
 
         message = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=8000,
+            max_tokens=4096,
             system=NVE_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": content}]
         )
