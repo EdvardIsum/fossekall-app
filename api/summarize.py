@@ -37,6 +37,18 @@ def extract_text(name, b64_content):
             reader = PdfReader(io.BytesIO(data))
             return '\n'.join(page.extract_text() or '' for page in reader.pages)
 
+        elif ext in ('xlsx', 'xls'):
+            from openpyxl import load_workbook
+            wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+            parts = []
+            for sheet in wb.worksheets:
+                parts.append(f'[Ark: {sheet.title}]')
+                for row in sheet.iter_rows(values_only=True):
+                    line = '\t'.join(str(c) if c is not None else '' for c in row)
+                    if line.strip():
+                        parts.append(line)
+            return '\n'.join(parts)
+
         elif ext in ('txt', 'md', 'csv'):
             return data.decode('utf-8', errors='replace')
 
@@ -63,7 +75,7 @@ class handler(BaseHTTPRequestHandler):
                 text = extract_text(f.get("name", ""), f.get("content"))
                 if text:
                     content_parts.append(
-                        f"\n--- Innhold fra {f['name']} ---\n{text[:8000]}"
+                        f"\n--- Innhold fra {f['name']} ---\n{text[:40000]}"
                     )
                 else:
                     content_parts.append(

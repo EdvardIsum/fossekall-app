@@ -607,7 +607,12 @@
   }
 
   function addFiles(list) {
-    list.forEach(f => files.push({ name: f.name, size: f.size, fileObj: f }));
+    list.forEach(f => {
+      if (f.size > 10 * 1024 * 1024) {
+        alert(`«${f.name}» er ${fmtSize(f.size)} — filer over 10 MB kan ta lang tid eller feile. Del opp filen om mulig.`);
+      }
+      files.push({ name: f.name, size: f.size, fileObj: f });
+    });
     renderFileChips();
   }
 
