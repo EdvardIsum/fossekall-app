@@ -48,41 +48,49 @@ def extract_text(name, b64_content):
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
-        length = int(self.headers.get("Content-Length", 0))
-        body = json.loads(self.rfile.read(length))
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length))
 
-        user_message = body.get("message", "")
-        files = body.get("files", [])
+            user_message = body.get("message", "")
+            files = body.get("files", [])
 
-        content_parts = []
-        if user_message:
-            content_parts.append(user_message)
+            content_parts = []
+            if user_message:
+                content_parts.append(user_message)
 
-        for f in files:
-            text = extract_text(f.get("name", ""), f.get("content"))
-            if text:
-                content_parts.append(
-                    f"\n--- Innhold fra {f['name']} ---\n{text[:8000]}"
-                )
-            else:
-                content_parts.append(
-                    f"\n[Vedlegg: {f.get('name', 'ukjent fil')} — kunne ikke lese innholdet]"
-                )
+            for f in files:
+                text = extract_text(f.get("name", ""), f.get("content"))
+                if text:
+                    content_parts.append(
+                        f"\n--- Innhold fra {f['name']} ---\n{text[:8000]}"
+                    )
+                else:
+                    content_parts.append(
+                        f"\n[Vedlegg: {f.get('name', 'ukjent fil')} — kunne ikke lese innholdet]"
+                    )
 
-        content = '\n'.join(content_parts)
+            content = '\n'.join(content_parts)
 
-        message = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1024,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": content}]
-        )
+            message = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=1024,
+                system=SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": content}]
+            )
 
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(json.dumps({"summary": message.content[0].text}).encode())
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"summary": message.content[0].text}).encode())
+
+        except Exception as e:
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode())
 
     def do_OPTIONS(self):
         self.send_response(200)
