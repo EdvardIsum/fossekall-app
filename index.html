@@ -270,6 +270,12 @@
     }
     .step-label { font-size: 14.5px; }
     .step-label.pending { color: rgba(45,101,121,.45); }
+    .summary-card {
+      background: #fff; border: 1px solid rgba(45,101,121,.15);
+      border-radius: 14px; padding: 20px 24px; margin-top: 12px;
+      font-size: 14px; line-height: 1.75; color: #1d4350; white-space: pre-wrap;
+    }
+    .correction-area { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
     .step-label.active, .step-label.done { color: #1d4350; }
 
     /* ── Done card ─────────────────────────────────────────────── */
@@ -434,6 +440,20 @@
           <div id="workingPanel">
             <p class="fk-intro">Ser gjennom det du har sendt og setter sammen et utkast …</p>
             <div class="steps-card" id="stepsCard"></div>
+          </div>
+
+          <!-- Summary / clarification state -->
+          <div id="summaryPanel" style="display:none;">
+            <p class="fk-intro">Her er hva jeg har forstått. Stemmer dette?</p>
+            <div class="summary-card" id="summaryCard"></div>
+            <div class="action-btns" style="margin-top:16px;">
+              <button class="btn-primary" onclick="confirmSummary()">Ser riktig ut — generer søknad</button>
+              <button class="btn-secondary" onclick="showCorrectionInput()">Korriger</button>
+            </div>
+            <div id="correctionArea" class="correction-area" style="display:none;">
+              <textarea id="correctionTextarea" class="main-textarea" placeholder="Skriv hva som er feil eller mangler …" style="min-height:72px; margin-top:4px;"></textarea>
+              <div><button class="btn-primary" onclick="sendCorrection()">Send korrigering</button></div>
+            </div>
           </div>
 
           <!-- Done state -->
@@ -619,6 +639,12 @@
     ta.focus();
   }
 
+  const SUMMARIZE_STEPS = [
+    'Leser det du har sendt',
+    'Analyserer informasjonen',
+    'Skriver oppsummering'
+  ];
+
   // ── Send ──────────────────────────────────────────────────────
   function sendMessage() {
     const txt = ta.value.trim();
@@ -648,43 +674,112 @@
     document.getElementById('composerArea').style.display = 'none';
     document.getElementById('thread').style.display = 'flex';
     document.getElementById('workingPanel').style.display = 'block';
+    document.getElementById('summaryPanel').style.display = 'none';
     document.getElementById('donePanel').style.display = 'none';
 
     stage = 'working';
     phase = 0;
-    renderSteps();
+    renderSteps(SUMMARIZE_STEPS);
 
     if (workTimer) clearInterval(workTimer);
     workTimer = setInterval(() => {
+      if (phase < SUMMARIZE_STEPS.length - 1) {
+        phase++;
+        renderSteps(SUMMARIZE_STEPS);
+      }
+    }, 1200);
+
+    fetch('/api/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: submittedText,
+        filenames: submittedFiles.map(f => f.name)
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      clearInterval(workTimer);
+      workTimer = null;
+      stage = 'done';
+      renderSteps(SUMMARIZE_STEPS);
+      setTimeout(() => {
+        document.getElementById('workingPanel').style.display = 'none';
+        document.getElementById('summaryCard').textContent = data.summary;
+        document.getElementById('summaryPanel').style.display = 'block';
+      }, 500);
+    })
+    .catch(() => {
+      clearInterval(workTimer);
+      workTimer = null;
+      document.getElementById('workingPanel').style.display = 'none';
+      document.getElementById('summaryCard').textContent = 'Noe gikk galt. Prøv igjen.';
+      document.getElementById('summaryPanel').style.display = 'block';
+    });
+  }
+
+  function renderSteps(steps) {
+    const stepsCard = document.getElementById('stepsCard');
+    stepsCard.innerHTML = steps.map((label, i) => {
+      const isDone = stage === 'done' || i < phase;
+      const isActive = stage === 'working' && i === phase;
+      const isPending = !isDone && !isActive;
+
+      let icon = '';
+      if (isDone)         icon = '<span class="step-done">✓</span>';
+      else if (isActive)  icon = '<span class="step-spinner"></span>';
+      else                icon = '<span class="step-pending"></span>';
+
+      const labelClass = 'step-label' + (isPending ? ' pending' : isActive ? ' active' : ' done');
+      return `<div class="step-row">${icon}<span class="${labelClass}">${escHtml(label)}</span></div>`;
+    }).join('');
+  }
+
+  function confirmSummary() {
+    document.getElementById('summaryPanel').style.display = 'none';
+    document.getElementById('workingPanel').style.display = 'block';
+    stage = 'working';
+    phase = 0;
+    renderSteps(STEP_LABELS);
+    if (workTimer) clearInterval(workTimer);
+    workTimer = setInterval(() => {
       phase++;
-      if (phase >= 5) {
+      if (phase >= STEP_LABELS.length) {
         clearInterval(workTimer);
         workTimer = null;
         stage = 'done';
-        renderSteps();
+        renderSteps(STEP_LABELS);
         document.getElementById('workingPanel').style.display = 'none';
         document.getElementById('donePanel').style.display = 'block';
       } else {
-        renderSteps();
+        renderSteps(STEP_LABELS);
       }
     }, 1150);
   }
 
-  function renderSteps() {
-    const stepsCard = document.getElementById('stepsCard');
-    stepsCard.innerHTML = STEP_LABELS.map((label, i) => {
-      const isDone = stage === 'done' || i < phase;
-      const isActive = stage === 'working' && i === phase;
-      const isPending = stage === 'working' && i > phase;
+  function showCorrectionInput() {
+    document.getElementById('correctionArea').style.display = 'flex';
+    document.getElementById('correctionTextarea').focus();
+  }
 
-      let icon = '';
-      if (isDone)    icon = '<span class="step-done">✓</span>';
-      else if (isActive) icon = '<span class="step-spinner"></span>';
-      else           icon = '<span class="step-pending"></span>';
-
-      const labelClass = isPending ? 'step-label pending' : 'step-label ' + (isActive ? 'active' : 'done');
-      return `<div class="step-row">${icon}<span class="${labelClass}">${escHtml(label)}</span></div>`;
-    }).join('');
+  function sendCorrection() {
+    const correction = document.getElementById('correctionTextarea').value.trim();
+    if (!correction) return;
+    document.getElementById('correctionArea').style.display = 'none';
+    document.getElementById('correctionTextarea').value = '';
+    document.getElementById('summaryCard').textContent = 'Oppdaterer forståelsen …';
+    fetch('/api/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: correction, filenames: [] })
+    })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('summaryCard').textContent = data.summary;
+    })
+    .catch(() => {
+      document.getElementById('summaryCard').textContent = 'Noe gikk galt. Prøv igjen.';
+    });
   }
 
   // ── Reset ─────────────────────────────────────────────────────
@@ -701,6 +796,8 @@
     document.getElementById('submittedFiles').innerHTML = '';
     document.getElementById('userBubble').style.display = 'none';
     document.getElementById('userBubble').textContent = '';
+    document.getElementById('summaryPanel').style.display = 'none';
+    document.getElementById('correctionArea').style.display = 'none';
     document.getElementById('thread').style.display = 'none';
     document.getElementById('composerArea').style.display = 'block';
     scrollToTerminal();
