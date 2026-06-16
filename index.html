@@ -508,6 +508,10 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
                 Åpne utkast
               </button>
+              <button class="btn-secondary" id="downloadBtn" onclick="downloadWord()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"></path><path d="M6 11l6 6 6-6"></path><path d="M5 21h14"></path></svg>
+                Last ned Word
+              </button>
               <button class="btn-secondary" onclick="resetApp()">Ny samtale</button>
             </div>
           </div>
@@ -837,6 +841,40 @@
     document.getElementById('thread').style.display = 'none';
     document.getElementById('composerArea').style.display = 'block';
     scrollToTerminal();
+  }
+
+  function downloadWord() {
+    if (!generatedDocument) return;
+    const btn = document.getElementById('downloadBtn');
+    btn.textContent = 'Laster ned…';
+    btn.disabled = true;
+
+    fetch('/api/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ document: generatedDocument })
+    })
+    .then(r => r.json())
+    .then(data => {
+      const binary = atob(data.docx);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'konsesjonssøknad-utkast.docx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"></path><path d="M6 11l6 6 6-6"></path><path d="M5 21h14"></path></svg> Last ned Word';
+      btn.disabled = false;
+    })
+    .catch(() => {
+      btn.textContent = 'Feil — prøv igjen';
+      btn.disabled = false;
+    });
   }
 
   function openDocument() {
