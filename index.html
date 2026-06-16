@@ -780,6 +780,7 @@
     .then(data => {
       clearInterval(workTimer);
       workTimer = null;
+      if (data.error) throw new Error(data.error);
       generatedDocument = data.document;
       stage = 'done';
       renderSteps(STEP_LABELS);
@@ -788,11 +789,11 @@
         document.getElementById('donePanel').style.display = 'block';
       }, 500);
     })
-    .catch(() => {
+    .catch(err => {
       clearInterval(workTimer);
       workTimer = null;
       document.getElementById('workingPanel').style.display = 'none';
-      document.getElementById('summaryCard').textContent = 'Noe gikk galt under generering. Prøv igjen.';
+      document.getElementById('summaryCard').textContent = 'Feil: ' + (err.message || 'ukjent feil') + '\n\nPrøv igjen.';
       document.getElementById('summaryPanel').style.display = 'block';
     });
   }

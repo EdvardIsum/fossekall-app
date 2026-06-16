@@ -84,20 +84,25 @@ Bekreftet forståelse av prosjektet:
 
 Skriv nå den fullstendige konsesjonssøknaden."""
 
-        message = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=4096,
-            system=NVE_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": content}]
-        )
-
-        response_text = message.content[0].text
-
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(json.dumps({"document": response_text}).encode())
+        try:
+            message = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=2048,
+                system=NVE_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": content}]
+            )
+            response_text = message.content[0].text
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"document": response_text}).encode())
+        except Exception as e:
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode())
 
     def do_OPTIONS(self):
         self.send_response(200)
