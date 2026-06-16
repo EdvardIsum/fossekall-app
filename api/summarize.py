@@ -72,7 +72,11 @@ class handler(BaseHTTPRequestHandler):
                 content_parts.append(user_message)
 
             for f in files:
-                text = extract_text(f.get("name", ""), f.get("content"))
+                # Foretrekk tekst ekstrahert av nettleseren
+                text = f.get("text")
+                # Fallback: prøv å ekstrahere fra base64 hvis sendt
+                if not text:
+                    text = extract_text(f.get("name", ""), f.get("content"))
                 if text:
                     content_parts.append(
                         f"\n--- Innhold fra {f['name']} ---\n{text[:40000]}"

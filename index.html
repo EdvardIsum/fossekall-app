@@ -7,6 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
@@ -535,6 +538,47 @@
 </div>
 
 <script>
+  // ── PDF.js worker ────────────────────────────────────────────
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  // ── Filekstraksjon i nettleser (ingen størrelsesgrense) ───────
+  async function extractTextFromFile(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'pdf') return await extractPdf(file);
+    if (ext === 'docx') return await extractDocx(file);
+    if (ext === 'xlsx' || ext === 'xls') return await extractExcel(file);
+    if (['txt', 'md', 'csv'].includes(ext)) return await file.text();
+    return null;
+  }
+
+  async function extractPdf(file) {
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(item => item.str).join(' ') + '\n';
+    }
+    return text;
+  }
+
+  async function extractDocx(file) {
+    const buf = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer: buf });
+    return result.value;
+  }
+
+  async function extractExcel(file) {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    return wb.SheetNames.map(name =>
+      `[Ark: ${name}]\n` + XLSX.utils.sheet_to_csv(wb.Sheets[name])
+    ).join('\n');
+  }
+
   // ── State ────────────────────────────────────────────────────
   let files = [];
   let stage = 'compose';
@@ -666,15 +710,6 @@
     'Skriver oppsummering'
   ];
 
-  function readAsBase64(fileObj) {
-    return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target.result.split(',')[1]);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(fileObj);
-    });
-  }
-
   // ── Send ──────────────────────────────────────────────────────
   async function sendMessage() {
     const txt = ta.value.trim();
@@ -710,22 +745,28 @@
 
     stage = 'working';
     phase = 0;
-    renderSteps(SUMMARIZE_STEPS);
+
+    const activeSteps = submittedFiles.length > 0
+      ? ['Leser og analyserer filer', 'Analyserer informasjonen', 'Skriver oppsummering']
+      : SUMMARIZE_STEPS;
+
+    renderSteps(activeSteps);
+
+    // Ekstraher tekst i nettleseren — fungerer for alle filstørrelser
+    const fileData = await Promise.all(
+      submittedFiles.map(async f => {
+        let text = null;
+        try { text = f.fileObj ? await extractTextFromFile(f.fileObj) : null; } catch(e) {}
+        return { name: f.name, text: text ? text.slice(0, 40000) : null };
+      })
+    );
+
+    if (submittedFiles.length > 0) { phase = 1; renderSteps(activeSteps); }
 
     if (workTimer) clearInterval(workTimer);
     workTimer = setInterval(() => {
-      if (phase < SUMMARIZE_STEPS.length - 1) {
-        phase++;
-        renderSteps(SUMMARIZE_STEPS);
-      }
+      if (phase < activeSteps.length - 1) { phase++; renderSteps(activeSteps); }
     }, 1200);
-
-    const fileData = await Promise.all(
-      submittedFiles.map(async f => ({
-        name: f.name,
-        content: f.fileObj ? await readAsBase64(f.fileObj) : null
-      }))
-    );
 
     fetch('/api/summarize', {
       method: 'POST',
@@ -737,7 +778,7 @@
       clearInterval(workTimer);
       workTimer = null;
       stage = 'done';
-      renderSteps(SUMMARIZE_STEPS);
+      renderSteps(activeSteps);
       setTimeout(() => {
         document.getElementById('workingPanel').style.display = 'none';
         summaryText = data.summary;
