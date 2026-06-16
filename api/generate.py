@@ -3,8 +3,6 @@ import json
 import anthropic
 from http.server import BaseHTTPRequestHandler
 
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-
 NVE_SYSTEM_PROMPT = """Du er Fossekall, en ekspert AI-assistent for Blåfall AS som skriver konsesjonssøknader til NVE (Norges vassdrags- og energidirektorat).
 
 Skriv en fullstendig, profesjonell konsesjonssøknad etter NVEs offisielle mal. Bruk denne strukturen nøyaktig:
@@ -68,15 +66,17 @@ Regler:
 - Ikke kommenter hva du gjør — skriv direkte søknadsteksten
 - Tabeller skrives i markdown-format"""
 
+
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
-        length = int(self.headers.get("Content-Length", 0))
-        body = json.loads(self.rfile.read(length))
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length))
 
-        summary = body.get("summary", "")
-        original_message = body.get("original_message", "")
+            summary = body.get("summary", "")
+            original_message = body.get("original_message", "")
 
-        content = f"""Prosjektbeskrivelse fra søker:
+            content = f"""Prosjektbeskrivelse fra søker:
 {original_message}
 
 Bekreftet forståelse av prosjektet:
@@ -84,7 +84,7 @@ Bekreftet forståelse av prosjektet:
 
 Skriv nå den fullstendige konsesjonssøknaden."""
 
-        try:
+            client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
             message = client.messages.create(
                 model="claude-sonnet-4-6",
                 max_tokens=8000,
@@ -92,11 +92,13 @@ Skriv nå den fullstendige konsesjonssøknaden."""
                 messages=[{"role": "user", "content": content}]
             )
             response_text = message.content[0].text
+
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps({"document": response_text}).encode())
+
         except Exception as e:
             self.send_response(500)
             self.send_header("Content-Type", "application/json")

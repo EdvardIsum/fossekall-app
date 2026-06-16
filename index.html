@@ -789,7 +789,11 @@
         original_message: originalMessage
       })
     })
-    .then(r => r.json())
+    .then(async r => {
+      const text = await r.text();
+      try { return JSON.parse(text); }
+      catch { throw new Error('Server-feil (' + r.status + '): ' + text.slice(0, 120)); }
+    })
     .then(data => {
       clearInterval(workTimer);
       workTimer = null;
