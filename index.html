@@ -607,7 +607,7 @@
   }
 
   function addFiles(list) {
-    list.forEach(f => files.push({ name: f.name, size: f.size }));
+    list.forEach(f => files.push({ name: f.name, size: f.size, fileObj: f }));
     renderFileChips();
   }
 
@@ -661,8 +661,17 @@
     'Skriver oppsummering'
   ];
 
+  function readAsBase64(fileObj) {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(fileObj);
+    });
+  }
+
   // ── Send ──────────────────────────────────────────────────────
-  function sendMessage() {
+  async function sendMessage() {
     const txt = ta.value.trim();
     if (!txt && files.length === 0) return;
 
@@ -706,13 +715,17 @@
       }
     }, 1200);
 
+    const fileData = await Promise.all(
+      submittedFiles.map(async f => ({
+        name: f.name,
+        content: f.fileObj ? await readAsBase64(f.fileObj) : null
+      }))
+    );
+
     fetch('/api/summarize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: submittedText,
-        filenames: submittedFiles.map(f => f.name)
-      })
+      body: JSON.stringify({ message: submittedText, files: fileData })
     })
     .then(r => r.json())
     .then(data => {
