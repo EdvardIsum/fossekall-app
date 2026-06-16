@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fossekall — Blåfall AI Konsesjonsskriver</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: #E7EEF0;
+      color: #1d4350;
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    ::selection { background: #DB670D; color: #fff; }
+    textarea::placeholder { color: rgba(45,101,121,.45); }
+
+    @keyframes fk-reveal {
+      0%   { opacity: 0; filter: blur(16px); transform: translateY(14px) scale(.965); }
+      100% { opacity: 1; filter: blur(0);    transform: none; }
+    }
+    @keyframes fk-glow {
+      0%,100% { opacity: .5; transform: translate(-50%,-50%) scale(.92); }
+      50%      { opacity: .9; transform: translate(-50%,-50%) scale(1.04); }
+    }
+    @keyframes fk-float {
+      0%,100% { transform: translateY(0);   opacity: .85; }
+      50%      { transform: translateY(7px); opacity: .5; }
+    }
+    @keyframes fk-spin { to { transform: rotate(360deg); } }
+
+    /* ── Fixed header ──────────────────────────────────────────── */
+    .header {
+      position: fixed; top: 0; left: 0; right: 0; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 26px; z-index: 50;
+      background: linear-gradient(180deg, rgba(231,238,240,.92) 0%, rgba(231,238,240,0) 100%);
+      backdrop-filter: blur(2px);
+    }
+    .header-left  { display: flex; align-items: center; gap: 10px; }
+    .header-mark  { width: 24px; height: auto; display: block; }
+    .header-brand {
+      font-family: 'Montserrat', sans-serif; font-weight: 700;
+      font-size: 15px; letter-spacing: .2em; color: #2D6579;
+    }
+    .header-label {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      letter-spacing: .24em; color: rgba(45,101,121,.55);
+    }
+
+    /* ── Hero ──────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      position: relative; padding: 60px 0 40px; overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute; top: 50%; left: 50%;
+      width: 900px; height: 900px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(45,101,121,.14) 0%, rgba(45,101,121,.05) 40%, rgba(45,101,121,0) 70%);
+      filter: blur(12px);
+      animation: fk-glow 7s ease-in-out infinite;
+      z-index: 0; pointer-events: none;
+    }
+    .hero-logo {
+      width: min(900px, 92vw); height: auto; display: block;
+      position: relative; z-index: 1;
+      opacity: 0; filter: blur(16px); transform: translateY(14px) scale(.965);
+      transition: opacity 1.3s cubic-bezier(.2,.7,.2,1),
+                  filter  1.3s cubic-bezier(.2,.7,.2,1),
+                  transform 1.3s cubic-bezier(.2,.7,.2,1);
+    }
+    .hero-logo.ready { opacity: 1; filter: blur(0); transform: none; }
+    .scroll-hint {
+      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      background: none; border: none; cursor: pointer; padding: 8px; z-index: 2;
+      opacity: 0; transition: opacity .9s ease .9s;
+    }
+    .scroll-hint.ready { opacity: 1; }
+    .scroll-hint-text {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      letter-spacing: .3em; color: rgba(45,101,121,.7);
+    }
+    .scroll-chevron {
+      display: inline-block; width: 11px; height: 11px;
+      border-right: 2px solid #2D6579; border-bottom: 2px solid #2D6579;
+      transform: rotate(45deg);
+      animation: fk-float 1.8s ease-in-out infinite;
+    }
+
+    /* ── Terminal section ──────────────────────────────────────── */
+    .terminal-section {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 108px 24px 96px;
+    }
+    .terminal-content {
+      width: 100%; max-width: 760px;
+      opacity: 0; transform: translateY(26px);
+      transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1);
+    }
+    .terminal-content.visible { opacity: 1; transform: none; }
+
+    /* ── Terminal heading ──────────────────────────────────────── */
+    .term-heading {
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; gap: 14px; margin-bottom: 38px;
+    }
+    .term-label-row { display: flex; align-items: center; gap: 9px; }
+    .term-diamond {
+      width: 7px; height: 7px; background: #DB670D;
+      border-radius: 1px; transform: rotate(45deg);
+    }
+    .term-label {
+      font-family: 'Space Mono', monospace; font-size: 12px;
+      letter-spacing: .34em; color: #2D6579;
+    }
+    .term-h1 {
+      margin: 0; font-size: clamp(52px, 9vw, 86px); font-weight: 500;
+      letter-spacing: -.02em; line-height: .96; color: #1d4350;
+    }
+    .term-sub {
+      margin: 0; max-width: 430px; font-size: 16px; line-height: 1.5;
+      color: rgba(45,101,121,.78);
+    }
+
+    /* ── Composer card ─────────────────────────────────────────── */
+    .composer-card {
+      position: relative; background: #fff;
+      border: 1px solid rgba(45,101,121,.16); border-radius: 22px;
+      box-shadow: 0 24px 60px -34px rgba(29,67,80,.5), 0 2px 6px -2px rgba(29,67,80,.06);
+      padding: 8px;
+    }
+    .file-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px 2px; }
+    .file-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: #EEF3F4; border: 1px solid rgba(45,101,121,.14);
+      border-radius: 10px; padding: 6px 8px 6px 10px; max-width: 240px;
+    }
+    .file-chip-name {
+      font-size: 13px; color: #1d4350;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .file-chip-size {
+      font-family: 'Space Mono', monospace; font-size: 10px;
+      color: rgba(45,101,121,.55); flex: none;
+    }
+    .file-chip-remove {
+      flex: none; width: 18px; height: 18px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer;
+      color: rgba(45,101,121,.6); font-size: 15px; line-height: 1;
+      border-radius: 5px; transition: background .15s, color .15s;
+    }
+    .file-chip-remove:hover { background: rgba(45,101,121,.1); color: #1d4350; }
+    .composer-textarea {
+      width: 100%; border: none; outline: none; resize: none;
+      background: transparent; font-family: 'Space Grotesk', sans-serif;
+      font-size: 17px; line-height: 1.5; color: #1d4350;
+      padding: 16px 16px 6px; max-height: 260px; overflow-y: auto;
+      display: block;
+    }
+    .composer-bottom {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 8px 8px;
+    }
+    .attach-btn {
+      display: flex; align-items: center; gap: 8px;
+      background: none; border: 1px solid rgba(45,101,121,.18);
+      color: #2D6579; border-radius: 11px; padding: 9px 13px;
+      cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px; font-weight: 500; transition: background .15s, border-color .15s;
+    }
+    .attach-btn:hover { background: #EEF3F4; border-color: rgba(45,101,121,.32); }
+    .composer-right { display: flex; align-items: center; gap: 14px; }
+    .send-hint {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      color: rgba(45,101,121,.45);
+    }
+    .send-btn {
+      width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+      background: #DB670D; border: none; border-radius: 13px; cursor: pointer;
+      box-shadow: 0 8px 18px -8px rgba(219,103,13,.7);
+      transition: background .15s;
+    }
+    .send-btn:hover { background: #c75e0b; }
+    .drag-overlay {
+      position: absolute; inset: 0; border-radius: 22px;
+      background: rgba(238,243,244,.94); border: 2px dashed #DB670D;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; pointer-events: none; display: none;
+    }
+    .drag-overlay.active { display: flex; }
+    .drag-overlay-text {
+      font-family: 'Space Mono', monospace; font-size: 12px;
+      letter-spacing: .1em; color: #2D6579;
+    }
+
+    /* ── Example pills ─────────────────────────────────────────── */
+    .example-pills {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      justify-content: center; margin-top: 20px;
+    }
+    .example-pill {
+      background: rgba(255,255,255,.6); border: 1px solid rgba(45,101,121,.14);
+      color: #2D6579; border-radius: 999px; padding: 8px 15px;
+      cursor: pointer; font-family: 'Space Grotesk', sans-serif;
+      font-size: 13.5px; transition: background .15s, border-color .15s;
+    }
+    .example-pill:hover { background: #fff; border-color: rgba(45,101,121,.3); }
+
+    /* ── Thread ────────────────────────────────────────────────── */
+    .thread { display: flex; flex-direction: column; gap: 26px; }
+    .user-bubble-wrap {
+      display: flex; justify-content: flex-end;
+    }
+    .user-bubble-inner {
+      max-width: 74%; display: flex; flex-direction: column;
+      align-items: flex-end; gap: 8px;
+    }
+    .submitted-files { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; }
+    .submitted-file-chip {
+      display: flex; align-items: center; gap: 7px;
+      background: #fff; border: 1px solid rgba(45,101,121,.14);
+      border-radius: 10px; padding: 6px 11px;
+    }
+    .submitted-file-chip span { font-size: 12.5px; color: #1d4350; }
+    .user-bubble {
+      background: #2D6579; color: #fff;
+      border-radius: 18px 18px 5px 18px;
+      padding: 13px 17px; font-size: 15.5px; line-height: 1.5;
+    }
+    .fossekall-row { display: flex; gap: 14px; align-items: flex-start; }
+    .fk-avatar {
+      flex: none; width: 38px; height: 38px; border-radius: 11px;
+      background: #EEF3F4; border: 1px solid rgba(45,101,121,.14);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .fk-avatar img { width: 26px; height: auto; display: block; }
+    .fk-body { flex: 1; min-width: 0; padding-top: 2px; }
+    .fk-name {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      letter-spacing: .2em; color: rgba(45,101,121,.6); margin-bottom: 14px;
+    }
+    .fk-intro { margin: 0 0 14px; font-size: 16px; line-height: 1.5; color: #1d4350; }
+    .steps-card {
+      background: #fff; border: 1px solid rgba(45,101,121,.13);
+      border-radius: 16px; padding: 14px 18px;
+    }
+    .step-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; }
+    .step-spinner {
+      flex: none; width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(45,101,121,.22); border-top-color: #DB670D;
+      display: inline-block; animation: fk-spin .7s linear infinite;
+    }
+    .step-done {
+      flex: none; width: 16px; height: 16px; border-radius: 50%;
+      background: #2D6579; color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 10px; line-height: 1;
+    }
+    .step-pending {
+      flex: none; width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(45,101,121,.16); display: inline-block;
+    }
+    .step-label { font-size: 14.5px; }
+    .step-label.pending { color: rgba(45,101,121,.45); }
+    .step-label.active, .step-label.done { color: #1d4350; }
+
+    /* ── Done card ─────────────────────────────────────────────── */
+    .done-intro {
+      margin: 0 0 16px; font-size: 16px; line-height: 1.55; color: #1d4350;
+    }
+    .doc-card {
+      background: #fff; border: 1px solid rgba(45,101,121,.14);
+      border-radius: 18px; overflow: hidden;
+      box-shadow: 0 18px 44px -32px rgba(29,67,80,.45);
+    }
+    .doc-card-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 18px; border-bottom: 1px solid rgba(45,101,121,.1);
+    }
+    .doc-icon-box {
+      flex: none; width: 34px; height: 34px; border-radius: 9px;
+      background: #DB670D; display: flex; align-items: center; justify-content: center;
+    }
+    .doc-meta { flex: 1; min-width: 0; }
+    .doc-title { font-size: 15px; font-weight: 600; color: #1d4350; }
+    .doc-sub {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      color: rgba(45,101,121,.55);
+    }
+    .doc-badge {
+      font-family: 'Space Mono', monospace; font-size: 10px;
+      letter-spacing: .14em; color: #2D6579; background: #EEF3F4;
+      border: 1px solid rgba(45,101,121,.16); border-radius: 6px; padding: 5px 9px;
+    }
+    .doc-chapters { padding: 6px 18px 10px; }
+    .chapter-row {
+      display: flex; align-items: center; gap: 11px;
+      padding: 9px 0; border-bottom: 1px solid rgba(45,101,121,.07);
+    }
+    .chapter-row:last-child { border-bottom: none; }
+    .chapter-check {
+      flex: none; width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(45,101,121,.1); color: #2D6579;
+      display: flex; align-items: center; justify-content: center; font-size: 9px; line-height: 1;
+    }
+    .chapter-title { flex: 1; font-size: 14.5px; color: #1d4350; }
+    .chapter-pages {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      color: rgba(45,101,121,.45);
+    }
+    .action-btns { display: flex; gap: 12px; margin-top: 18px; }
+    .btn-primary {
+      display: flex; align-items: center; gap: 9px;
+      background: #2D6579; color: #fff; border: none;
+      border-radius: 12px; padding: 13px 20px; cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 500;
+      transition: background .15s;
+    }
+    .btn-primary:hover { background: #244f60; }
+    .btn-secondary {
+      background: none; color: #2D6579;
+      border: 1px solid rgba(45,101,121,.2); border-radius: 12px;
+      padding: 13px 20px; cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 500;
+      transition: background .15s;
+    }
+    .btn-secondary:hover { background: #EEF3F4; }
+  </style>
+</head>
+<body>
+
+<!-- Fixed header -->
+<header class="header">
+  <div class="header-left">
+    <img src="assets/mark.png" alt="Blåfall" class="header-mark" />
+    <span class="header-brand">BLÅFALL&nbsp;AI</span>
+  </div>
+  <span class="header-label">KONSESJONSSKRIVER</span>
+</header>
+
+<!-- Hero section -->
+<section class="hero" id="hero">
+  <div class="hero-glow"></div>
+  <img src="assets/fossekall-cut.png" alt="Blåfall AI — Fossekall" class="hero-logo" id="heroLogo" />
+  <button class="scroll-hint" id="scrollHint" onclick="scrollToTerminal()" aria-label="Bla ned">
+    <span class="scroll-hint-text">BLA&nbsp;NED</span>
+    <span class="scroll-chevron"></span>
+  </button>
+</section>
+
+<!-- Terminal section -->
+<section class="terminal-section" id="terminal">
+  <div class="terminal-content" id="termContent">
+
+    <!-- Heading -->
+    <div class="term-heading">
+      <div class="term-label-row">
+        <span class="term-diamond"></span>
+        <span class="term-label">KONSESJONSSKRIVER</span>
+      </div>
+      <h1 class="term-h1">Fossekall</h1>
+      <p class="term-sub">Fortell om kraftverket og last opp dokumentene du har — så skriver jeg utkastet til konsesjonssøknad.</p>
+    </div>
+
+    <!-- Composer (compose state) -->
+    <div id="composerArea">
+      <div class="composer-card" id="composerCard">
+
+        <div class="file-chips" id="fileChips" style="display:none;"></div>
+
+        <textarea
+          class="composer-textarea"
+          id="mainTextarea"
+          rows="1"
+          placeholder="Beskriv kraftverket, vassdraget og planlagt produksjon …"
+        ></textarea>
+
+        <div class="composer-bottom">
+          <button class="attach-btn" onclick="triggerFileInput()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"></path></svg>
+            Last opp filer
+          </button>
+          <div class="composer-right">
+            <span class="send-hint">⏎ for å sende</span>
+            <button class="send-btn" onclick="sendMessage()" aria-label="Send">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="M5 12l7-7 7 7"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="drag-overlay" id="dragOverlay">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#DB670D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"></path><path d="M6 11l6 6 6-6"></path><path d="M5 21h14"></path></svg>
+          <span class="drag-overlay-text">Slipp dokumentene her</span>
+        </div>
+
+        <input type="file" multiple id="fileInput" style="display:none;" onchange="onFilePick(event)" />
+      </div>
+
+      <div class="example-pills">
+        <button class="example-pill" onclick="fillExample('Beskriv kraftverket: ')">Beskriv kraftverket</button>
+        <button class="example-pill" onclick="fillExample('Hva må med i en konsesjonssøknad for et småkraftverk?')">Hva må med i en konsesjonssøknad?</button>
+        <button class="example-pill" onclick="fillExample('Oppsummer hovedpunktene i dokumentene jeg har lastet opp.')">Oppsummer dokumentene</button>
+      </div>
+    </div>
+
+    <!-- Thread (working + done state) -->
+    <div class="thread" id="thread" style="display:none;">
+
+      <!-- User bubble -->
+      <div class="user-bubble-wrap">
+        <div class="user-bubble-inner">
+          <div class="submitted-files" id="submittedFiles" style="display:none;"></div>
+          <div class="user-bubble" id="userBubble" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Fossekall response -->
+      <div class="fossekall-row">
+        <div class="fk-avatar">
+          <img src="assets/mark.png" alt="Fossekall" />
+        </div>
+        <div class="fk-body">
+          <div class="fk-name">FOSSEKALL</div>
+
+          <!-- Working state -->
+          <div id="workingPanel">
+            <p class="fk-intro">Ser gjennom det du har sendt og setter sammen et utkast …</p>
+            <div class="steps-card" id="stepsCard"></div>
+          </div>
+
+          <!-- Done state -->
+          <div id="donePanel" style="display:none;">
+            <p class="done-intro">Jeg har laget et utkast til konsesjonssøknad basert på det du sendte. Gå gjennom hvert kapittel og juster der det trengs — kildehenvisninger er lenket til dokumentene dine.</p>
+            <div class="doc-card">
+              <div class="doc-card-header">
+                <div class="doc-icon-box">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></svg>
+                </div>
+                <div class="doc-meta">
+                  <div class="doc-title">Konsesjonssøknad — utkast</div>
+                  <div class="doc-sub">≈ 6 800 ord · 24 sider</div>
+                </div>
+                <span class="doc-badge">FERDIG</span>
+              </div>
+              <div class="doc-chapters">
+                <div class="chapter-row">
+                  <span class="chapter-check">✓</span>
+                  <span class="chapter-title">Sammendrag</span>
+                  <span class="chapter-pages">1 s.</span>
+                </div>
+                <div class="chapter-row">
+                  <span class="chapter-check">✓</span>
+                  <span class="chapter-title">Beskrivelse av tiltaket</span>
+                  <span class="chapter-pages">4 s.</span>
+                </div>
+                <div class="chapter-row">
+                  <span class="chapter-check">✓</span>
+                  <span class="chapter-title">Hydrologi og nedbørfelt</span>
+                  <span class="chapter-pages">5 s.</span>
+                </div>
+                <div class="chapter-row">
+                  <span class="chapter-check">✓</span>
+                  <span class="chapter-title">Produksjon og teknisk plan</span>
+                  <span class="chapter-pages">4 s.</span>
+                </div>
+                <div class="chapter-row">
+                  <span class="chapter-check">✓</span>
+                  <span class="chapter-title">Miljøvirkninger og avbøtende tiltak</span>
+                  <span class="chapter-pages">6 s.</span>
+                </div>
+                <div class="chapter-row">
+                  <span class="chapter-check">✓</span>
+                  <span class="chapter-title">Arealbruk og grunneierforhold</span>
+                  <span class="chapter-pages">4 s.</span>
+                </div>
+              </div>
+            </div>
+            <div class="action-btns">
+              <button class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+                Åpne utkast
+              </button>
+              <button class="btn-secondary" onclick="resetApp()">Ny samtale</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+    <!-- /thread -->
+
+  </div>
+</section>
+
+<script>
+  // ── State ────────────────────────────────────────────────────
+  let files = [];          // { name, size }
+  let stage = 'compose';   // 'compose' | 'working' | 'done'
+  let phase = 0;           // 0–4
+  let workTimer = null;
+
+  const STEP_LABELS = [
+    'Leser opplastede dokumenter',
+    'Identifiserer anlegg og vassdrag',
+    'Henter krav og veiledere fra NVE',
+    'Strukturerer søknaden',
+    'Skriver utkast til søknad'
+  ];
+
+  // ── Intro animations ─────────────────────────────────────────
+  setTimeout(() => {
+    document.getElementById('heroLogo').classList.add('ready');
+    document.getElementById('scrollHint').classList.add('ready');
+  }, 60);
+
+  // ── Terminal reveal via IntersectionObserver ──────────────────
+  const termContent = document.getElementById('termContent');
+  const revealFallback = setTimeout(() => termContent.classList.add('visible'), 1800);
+
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          termContent.classList.add('visible');
+          clearTimeout(revealFallback);
+          io.disconnect();
+        }
+      });
+    }, { threshold: 0.16 });
+    io.observe(document.getElementById('terminal'));
+  } else {
+    termContent.classList.add('visible');
+    clearTimeout(revealFallback);
+  }
+
+  // ── Scroll ────────────────────────────────────────────────────
+  function scrollToTerminal() {
+    const el = document.getElementById('terminal');
+    if (el) {
+      const y = el.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  }
+
+  // ── Textarea auto-grow ────────────────────────────────────────
+  const ta = document.getElementById('mainTextarea');
+  ta.addEventListener('input', () => autoGrow());
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  function autoGrow() {
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 260) + 'px';
+  }
+
+  // ── File handling ─────────────────────────────────────────────
+  function triggerFileInput() { document.getElementById('fileInput').click(); }
+
+  function onFilePick(e) {
+    addFiles(Array.from(e.target.files || []));
+    e.target.value = '';
+  }
+
+  function addFiles(list) {
+    list.forEach(f => files.push({ name: f.name, size: f.size }));
+    renderFileChips();
+  }
+
+  function removeFile(i) {
+    files.splice(i, 1);
+    renderFileChips();
+  }
+
+  function fmtSize(b) {
+    if (b == null) return '';
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(0) + ' KB';
+    return (b / 1048576).toFixed(1) + ' MB';
+  }
+
+  function renderFileChips() {
+    const container = document.getElementById('fileChips');
+    if (files.length === 0) { container.style.display = 'none'; container.innerHTML = ''; return; }
+    container.style.display = 'flex';
+    container.innerHTML = files.map((f, i) => `
+      <div class="file-chip">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6579" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></svg>
+        <span class="file-chip-name">${escHtml(f.name)}</span>
+        <span class="file-chip-size">${fmtSize(f.size)}</span>
+        <button class="file-chip-remove" onclick="removeFile(${i})" aria-label="Fjern">×</button>
+      </div>
+    `).join('');
+  }
+
+  // ── Drag & drop ───────────────────────────────────────────────
+  const card = document.getElementById('composerCard');
+  const overlay = document.getElementById('dragOverlay');
+  card.addEventListener('dragover', e => { e.preventDefault(); overlay.classList.add('active'); });
+  card.addEventListener('dragleave', e => { e.preventDefault(); overlay.classList.remove('active'); });
+  card.addEventListener('drop', e => {
+    e.preventDefault();
+    overlay.classList.remove('active');
+    if (e.dataTransfer && e.dataTransfer.files) addFiles(Array.from(e.dataTransfer.files));
+  });
+
+  // ── Example pills ─────────────────────────────────────────────
+  function fillExample(text) {
+    ta.value = text;
+    autoGrow();
+    ta.focus();
+  }
+
+  // ── Send ──────────────────────────────────────────────────────
+  function sendMessage() {
+    const txt = ta.value.trim();
+    if (!txt && files.length === 0) return;
+
+    const submittedText = txt;
+    const submittedFiles = [...files];
+
+    // Show user bubble
+    const sfEl = document.getElementById('submittedFiles');
+    if (submittedFiles.length > 0) {
+      sfEl.style.display = 'flex';
+      sfEl.innerHTML = submittedFiles.map(f => `
+        <div class="submitted-file-chip">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2D6579" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></svg>
+          <span>${escHtml(f.name)}</span>
+        </div>
+      `).join('');
+    }
+    if (submittedText) {
+      const bubbleEl = document.getElementById('userBubble');
+      bubbleEl.textContent = submittedText;
+      bubbleEl.style.display = 'block';
+    }
+
+    // Switch to working state
+    document.getElementById('composerArea').style.display = 'none';
+    document.getElementById('thread').style.display = 'flex';
+    document.getElementById('workingPanel').style.display = 'block';
+    document.getElementById('donePanel').style.display = 'none';
+
+    stage = 'working';
+    phase = 0;
+    renderSteps();
+
+    if (workTimer) clearInterval(workTimer);
+    workTimer = setInterval(() => {
+      phase++;
+      if (phase >= 5) {
+        clearInterval(workTimer);
+        workTimer = null;
+        stage = 'done';
+        renderSteps();
+        document.getElementById('workingPanel').style.display = 'none';
+        document.getElementById('donePanel').style.display = 'block';
+      } else {
+        renderSteps();
+      }
+    }, 1150);
+  }
+
+  function renderSteps() {
+    const stepsCard = document.getElementById('stepsCard');
+    stepsCard.innerHTML = STEP_LABELS.map((label, i) => {
+      const isDone = stage === 'done' || i < phase;
+      const isActive = stage === 'working' && i === phase;
+      const isPending = stage === 'working' && i > phase;
+
+      let icon = '';
+      if (isDone)    icon = '<span class="step-done">✓</span>';
+      else if (isActive) icon = '<span class="step-spinner"></span>';
+      else           icon = '<span class="step-pending"></span>';
+
+      const labelClass = isPending ? 'step-label pending' : 'step-label ' + (isActive ? 'active' : 'done');
+      return `<div class="step-row">${icon}<span class="${labelClass}">${escHtml(label)}</span></div>`;
+    }).join('');
+  }
+
+  // ── Reset ─────────────────────────────────────────────────────
+  function resetApp() {
+    if (workTimer) { clearInterval(workTimer); workTimer = null; }
+    files = [];
+    stage = 'compose';
+    phase = 0;
+    ta.value = '';
+    autoGrow();
+    document.getElementById('fileChips').style.display = 'none';
+    document.getElementById('fileChips').innerHTML = '';
+    document.getElementById('submittedFiles').style.display = 'none';
+    document.getElementById('submittedFiles').innerHTML = '';
+    document.getElementById('userBubble').style.display = 'none';
+    document.getElementById('userBubble').textContent = '';
+    document.getElementById('thread').style.display = 'none';
+    document.getElementById('composerArea').style.display = 'block';
+    scrollToTerminal();
+  }
+
+  // ── Util ──────────────────────────────────────────────────────
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
