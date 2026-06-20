@@ -19,7 +19,7 @@ C_MUTED       = RGBColor(0x5b, 0x7d, 0x8a)   # dempet teal (eyebrow, dato)
 C_GREY        = RGBColor(0x8a, 0xa3, 0xac)   # lys grå (header/footer tekst)
 C_PLACEHOLDER = RGBColor(0xC0, 0x39, 0x2B)
 
-LOGO_PATH = os.path.join(os.path.dirname(__file__), '..', 'assets', 'blaafall_logo.png')
+LOGO_PATH = os.path.join(os.path.dirname(__file__), '..', 'assets', 'logo-transparent.png')
 
 NORSK_MAANEDER = [
     'januar', 'februar', 'mars', 'april', 'mai', 'juni',
@@ -132,7 +132,7 @@ def _setup_header(section, anlegg):
     title_p.paragraph_format.space_before = Pt(10)
     title_p.paragraph_format.space_after = Pt(0)
     run = title_p.add_run(anlegg.upper())
-    run.font.name = 'Calibri'
+    run.font.name = 'Source Sans 3'
     run.font.size = Pt(8)
     run.font.bold = True
     run.font.color.rgb = C_GREY
@@ -168,7 +168,7 @@ def _setup_footer(section, dato_str):
     left_p.paragraph_format.space_before = Pt(0)
     left_p.paragraph_format.space_after = Pt(0)
     run = left_p.add_run('BLÅFALL AS')
-    run.font.name = 'Calibri'
+    run.font.name = 'Source Sans 3'
     run.font.size = Pt(8)
     run.font.bold = True
     run.font.color.rgb = C_GREY
@@ -178,7 +178,7 @@ def _setup_footer(section, dato_str):
     right_p.paragraph_format.space_before = Pt(0)
     right_p.paragraph_format.space_after = Pt(0)
     run = right_p.add_run(f'SØKNAD OM KONSESJON · {dato_str.upper()}')
-    run.font.name = 'Calibri'
+    run.font.name = 'Source Sans 3'
     run.font.size = Pt(8)
     run.font.bold = True
     run.font.color.rgb = C_GREY
@@ -191,7 +191,7 @@ def _build_cover(doc, anlegg, kommune, fylke, maaned, aar):
         p.paragraph_format.space_before = Pt(space_before)
         p.paragraph_format.space_after = Pt(space_after)
         run = p.add_run(text)
-        run.font.name = 'Calibri'
+        run.font.name = 'Source Sans 3'
         run.font.size = Pt(size)
         run.font.bold = bold
         run.font.italic = italic
@@ -199,7 +199,16 @@ def _build_cover(doc, anlegg, kommune, fylke, maaned, aar):
         return p
 
     cp('BLÅFALL AS', 13, C_MUTED, bold=True, space_before=44)
-    cp(anlegg, 34, C_DARK, bold=True, space_before=14)
+    # Prosjektnavn bruker Source Serif 4
+    p2 = doc.add_paragraph()
+    p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p2.paragraph_format.space_before = Pt(14)
+    p2.paragraph_format.space_after = Pt(0)
+    r2 = p2.add_run(anlegg)
+    r2.font.name = 'Source Serif 4'
+    r2.font.size = Pt(34)
+    r2.font.bold = True
+    r2.font.color.rgb = C_DARK
     cp('— i —', 12, C_MUTED, italic=True, space_before=16)
 
     if kommune or fylke:
@@ -212,7 +221,15 @@ def _build_cover(doc, anlegg, kommune, fylke, maaned, aar):
     for side in ['top', 'bottom', 'left', 'right']:
         _pBdr(img_p, side, 'cdd9de', 4)
 
-    cp('Søknad om konsesjon', 22, C_DARK, bold=True, space_before=24)
+    p_sub = doc.add_paragraph()
+    p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_sub.paragraph_format.space_before = Pt(24)
+    p_sub.paragraph_format.space_after = Pt(0)
+    r_sub = p_sub.add_run('Søknad om konsesjon')
+    r_sub.font.name = 'Source Serif 4'
+    r_sub.font.size = Pt(22)
+    r_sub.font.bold = True
+    r_sub.font.color.rgb = C_DARK
     cp(f'{maaned.upper()} {aar}', 12, C_MUTED, bold=True, space_before=10)
 
     doc.add_page_break()
@@ -296,11 +313,11 @@ def render_content(doc, text):
 def build_docx(text):
     doc = Document()
 
-    doc.styles['Normal'].font.name = 'Calibri'
+    doc.styles['Normal'].font.name = 'Source Sans 3'
     doc.styles['Normal'].font.size = Pt(11)
     for level, size in [(1, 14), (2, 13), (3, 12)]:
         style = doc.styles[f'Heading {level}']
-        style.font.name = 'Calibri'
+        style.font.name = 'Source Serif 4'
         style.font.size = Pt(size)
         style.font.color.rgb = C_MID
         style.font.bold = True
