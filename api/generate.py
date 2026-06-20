@@ -15,16 +15,13 @@ Start alltid med søknadsbrevet, deretter sammendrag, deretter kapitlene:
 ---
 
 **[Kraftverknavn]**
-**Søknad om konsesjon**
+**Søknad om konsesjon for bygging av [Kraftverknavn]**
+**[Søkerfirma]**
 **[Dato]**
-
----
 
 NVE – Konsesjons- og tilsynsavdelingen
 Postboks 5091 Majorstua
 0301 Oslo
-
-**Søknad om konsesjon for bygging av [Kraftverknavn]**
 
 [Søkerfirma] ønsker å utnytte vannfallet i [elvenavn] i [kommune] kommune, [fylke] fylke, og søker herved om følgende tillatelser:
 
@@ -368,7 +365,7 @@ class handler(BaseHTTPRequestHandler):
             client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
             message = client.messages.create(
                 model="claude-sonnet-4-6",
-                max_tokens=8000,
+                max_tokens=16000,
                 system=NVE_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": content}]
             )
