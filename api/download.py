@@ -98,7 +98,7 @@ def _setup_header(section, anlegg):
         p.paragraph_format.space_before = Pt(0)
         p.paragraph_format.space_after = Pt(0)
 
-    tbl = header.add_table(rows=1, cols=2)
+    tbl = header.add_table(rows=1, cols=2, width=Cm(16.5))
     _no_borders(tbl)
     tbl.cell(0, 0).width = Cm(7)
     tbl.cell(0, 1).width = Cm(9.5)
@@ -148,7 +148,7 @@ def _setup_footer(section, dato_str):
     rule.paragraph_format.space_after = Pt(6)
     _pBdr(rule, 'top', 'cdd9de', 4)
 
-    tbl = footer.add_table(rows=1, cols=2)
+    tbl = footer.add_table(rows=1, cols=2, width=Cm(16.5))
     _no_borders(tbl)
     tbl.cell(0, 0).width = Cm(8)
     tbl.cell(0, 1).width = Cm(8.5)
