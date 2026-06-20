@@ -53,6 +53,17 @@ def _no_borders(table):
         el.set(qn('w:val'), 'none')
         tblBorders.append(el)
     tblPr.append(tblBorders)
+    # Fjern også borders på alle celler
+    for row in table.rows:
+        for cell in row.cells:
+            tc = cell._tc
+            tcPr = tc.get_or_add_tcPr()
+            tcBorders = OxmlElement('w:tcBorders')
+            for border in ['top', 'left', 'bottom', 'right', 'insideH', 'insideV']:
+                el = OxmlElement(f'w:{border}')
+                el.set(qn('w:val'), 'none')
+                tcBorders.append(el)
+            tcPr.append(tcBorders)
 
 
 def extract_metadata(text):

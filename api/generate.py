@@ -41,28 +41,13 @@ Med vennlig hilsen
 
 ## SAMMENDRAG
 
-Inkluder alltid denne tabellen:
+Skriv et kortfattet, flytende sammendrag (3–5 avsnitt) som dekker:
+- Hvem søker og hva det søkes om (elv, kommune, fylke)
+- Prosjektets tekniske hovedtrekk i løpende tekst (installert effekt, produksjon, fallhøyde)
+- Kort om viktigste miljøvirkninger og avbøtende tiltak
+- Samfunnsnytte og lokal verdiskaping
 
-| Parameter | Verdi |
-|---|---|
-| Fylke | [fylke] |
-| Kommune | [kommune] |
-| Elv | [elvenavn] |
-| Nedbørfelt | X km² |
-| Inntak kote, moh | X m |
-| Utløp kote, moh | X m |
-| Brutto fallhøyde | X m |
-| Slukeevne maks | X m³/s |
-| Slukeevne min | X m³/s |
-| Alminnelig lavvannføring | X l/s |
-| Minstevannføring sommer | X l/s |
-| Minstevannføring vinter | X l/s |
-| Installert effekt | X MW |
-| Produksjon per år | X GWh |
-| Utbyggingskostnad | X mill. NOK |
-| Utbyggingspris | X kr/kWh |
-
-Avslutt sammendraget med: "Samlet konsekvens av en utbygging er vurdert å være [liten/middels] negativ."
+Ingen tabeller i sammendraget. Avslutt med: "Samlet konsekvens av en utbygging er vurdert å være [liten/middels] negativ."
 
 ---
 
