@@ -132,7 +132,7 @@ def _setup_header(section, anlegg):
     title_p.paragraph_format.space_before = Pt(10)
     title_p.paragraph_format.space_after = Pt(0)
     run = title_p.add_run(anlegg.upper())
-    run.font.name = 'Source Sans 3'
+    run.font.name = 'Calibri'
     run.font.size = Pt(8)
     run.font.bold = True
     run.font.color.rgb = C_GREY
@@ -168,7 +168,7 @@ def _setup_footer(section, dato_str):
     left_p.paragraph_format.space_before = Pt(0)
     left_p.paragraph_format.space_after = Pt(0)
     run = left_p.add_run('BLÅFALL AS')
-    run.font.name = 'Source Sans 3'
+    run.font.name = 'Calibri'
     run.font.size = Pt(8)
     run.font.bold = True
     run.font.color.rgb = C_GREY
@@ -178,7 +178,7 @@ def _setup_footer(section, dato_str):
     right_p.paragraph_format.space_before = Pt(0)
     right_p.paragraph_format.space_after = Pt(0)
     run = right_p.add_run(f'SØKNAD OM KONSESJON · {dato_str.upper()}')
-    run.font.name = 'Source Sans 3'
+    run.font.name = 'Calibri'
     run.font.size = Pt(8)
     run.font.bold = True
     run.font.color.rgb = C_GREY
@@ -191,7 +191,7 @@ def _build_cover(doc, anlegg, kommune, fylke, maaned, aar):
         p.paragraph_format.space_before = Pt(space_before)
         p.paragraph_format.space_after = Pt(space_after)
         run = p.add_run(text)
-        run.font.name = 'Source Sans 3'
+        run.font.name = 'Calibri'
         run.font.size = Pt(size)
         run.font.bold = bold
         run.font.italic = italic
@@ -205,7 +205,7 @@ def _build_cover(doc, anlegg, kommune, fylke, maaned, aar):
     p2.paragraph_format.space_before = Pt(14)
     p2.paragraph_format.space_after = Pt(0)
     r2 = p2.add_run(anlegg)
-    r2.font.name = 'Source Serif 4'
+    r2.font.name = 'Georgia'
     r2.font.size = Pt(34)
     r2.font.bold = True
     r2.font.color.rgb = C_DARK
@@ -226,7 +226,7 @@ def _build_cover(doc, anlegg, kommune, fylke, maaned, aar):
     p_sub.paragraph_format.space_before = Pt(24)
     p_sub.paragraph_format.space_after = Pt(0)
     r_sub = p_sub.add_run('Søknad om konsesjon')
-    r_sub.font.name = 'Source Serif 4'
+    r_sub.font.name = 'Georgia'
     r_sub.font.size = Pt(22)
     r_sub.font.bold = True
     r_sub.font.color.rgb = C_DARK
@@ -313,11 +313,11 @@ def render_content(doc, text):
 def build_docx(text):
     doc = Document()
 
-    doc.styles['Normal'].font.name = 'Source Sans 3'
+    doc.styles['Normal'].font.name = 'Calibri'
     doc.styles['Normal'].font.size = Pt(11)
     for level, size in [(1, 14), (2, 13), (3, 12)]:
         style = doc.styles[f'Heading {level}']
-        style.font.name = 'Source Serif 4'
+        style.font.name = 'Georgia'
         style.font.size = Pt(size)
         style.font.color.rgb = C_MID
         style.font.bold = True
