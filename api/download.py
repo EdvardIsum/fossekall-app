@@ -1,28 +1,54 @@
 import json
 import base64
 import io
+import re
 from http.server import BaseHTTPRequestHandler
 from docx import Document
 from docx.shared import Pt, RGBColor, Cm
-from docx.oxml.ns import qn
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+HEADING_COLOR = RGBColor(0x1F, 0x49, 0x7D)
+PLACEHOLDER_COLOR = RGBColor(0xC0, 0x39, 0x2B)
+
+
+def add_formatted_runs(paragraph, text):
+    """Parser inline **bold** og legger til riktig formaterte runs."""
+    parts = re.split(r'(\*\*[^*]+?\*\*)', text)
+    for part in parts:
+        if not part:
+            continue
+        if part.startswith('**') and part.endswith('**'):
+            run = paragraph.add_run(part[2:-2])
+            run.bold = True
+        else:
+            run = paragraph.add_run(part)
+        if '[FYLL INN' in part:
+            run.font.color.rgb = PLACEHOLDER_COLOR
+            run.bold = True
 
 
 def build_docx(text):
     doc = Document()
 
-    # Page margins
     for section in doc.sections:
         section.top_margin = Cm(2.5)
         section.bottom_margin = Cm(2.5)
         section.left_margin = Cm(3)
         section.right_margin = Cm(2.5)
 
-    # Default font
     doc.styles['Normal'].font.name = 'Calibri'
     doc.styles['Normal'].font.size = Pt(11)
 
+    for level, size in [(1, 14), (2, 13), (3, 12)]:
+        style = doc.styles[f'Heading {level}']
+        style.font.name = 'Calibri'
+        style.font.size = Pt(size)
+        style.font.color.rgb = HEADING_COLOR
+        style.font.bold = True
+
     table_rows = []
     in_table = False
+    on_title_page = True  # Første seksjon (før første ---) er forsiden
 
     def flush_table():
         if not table_rows:
@@ -44,7 +70,6 @@ def build_docx(text):
     for line in text.split('\n'):
         s = line.strip()
 
-        # Table row
         if s.startswith('|'):
             cells = [c.strip() for c in s.split('|')[1:-1]]
             is_separator = all(set(c) <= set('-: ') for c in cells)
@@ -53,12 +78,16 @@ def build_docx(text):
                 table_rows.append(cells)
             continue
 
-        # Flush table when leaving table block
         if in_table:
             flush_table()
             in_table = False
 
         if not s:
+            continue
+
+        if s == '---':
+            on_title_page = False
+            doc.add_page_break()
             continue
 
         if s.startswith('# '):
@@ -68,13 +97,20 @@ def build_docx(text):
         elif s.startswith('### '):
             doc.add_heading(s[4:], level=3)
         elif s.startswith('- '):
-            doc.add_paragraph(s[2:], style='List Bullet')
+            p = doc.add_paragraph(style='List Bullet')
+            add_formatted_runs(p, s[2:])
+        elif on_title_page:
+            # Forsidetekst: sentrert og stor
+            p = doc.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            clean = s.replace('**', '')
+            run = p.add_run(clean)
+            run.bold = True
+            run.font.size = Pt(16)
+            run.font.color.rgb = HEADING_COLOR
         else:
             p = doc.add_paragraph()
-            run = p.add_run(s)
-            if '[FYLL INN' in s:
-                run.font.color.rgb = RGBColor(0xC0, 0x39, 0x2B)
-                run.bold = True
+            add_formatted_runs(p, s)
 
     if in_table:
         flush_table()
