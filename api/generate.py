@@ -1,6 +1,7 @@
 import os
 import json
 import anthropic
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from http.server import BaseHTTPRequestHandler
 
 NVE_SYSTEM_PROMPT = """Du er Fossekall, en ekspert AI-assistent for Blåfall AS som skriver konsesjonssøknader til NVE (Norges vassdrags- og energidirektorat) for småkraftverk.
@@ -257,6 +258,91 @@ Vanligvis kort: "Problemer vedrørende endringer i vanntemperatur, isforhold og 
 7. Referér til vedlegg: "(se vedlegg X)" der kart, hydrologirapport og naturfaglig utredning hører hjemme.
 8. Juridiske referanser: alltid "vannressursloven § 8" og "energiloven" — aldri forkortede eller feil henvisninger."""
 
+# Kapitler og tilhørende søketekster for RAG-oppslag
+_KAPITLER_RAG = [
+    ("tiltaksbeskrivelse",        "teknisk beskrivelse kraftverk inntak dam tunnel rørgate kraftstasjon turbintype Pelton Francis"),
+    ("hydrologi og vannføring",   "hydrologi vannføring nedbørfelt alminnelig lavvannføring sesongvariasjon sammenligningsstasjon"),
+    ("biologisk mangfold",        "biologisk mangfold naturtyper rødlistede arter verneinteresser naturbase Artsdatabanken"),
+    ("fisk og ferskvannsbiologi", "fisk ørret laks sjøørret minstevannføring gyteområder smoltproduksjon fiskepassasje"),
+    ("avbøtende tiltak",          "avbøtende tiltak minstevannføring slipping ventil revegetering sedimentfeller anleggsfase"),
+    ("samfunnsnytte",             "samfunnsnytte sysselsetting skatteinntekter fornybar energi husstander lokal verdiskaping"),
+]
+
+
+def hent_relevante_avsnitt(query_tekst, dokumenttype=None, antall=3):
+    """Søker i Supabase vektorbase og returnerer relevante avsnitt. Returnerer [] ved feil."""
+    try:
+        import voyageai
+        from supabase import create_client
+
+        voyage = voyageai.Client(api_key=os.environ["VOYAGE_API_KEY"])
+        supabase = create_client(
+            os.environ["SUPABASE_URL"],
+            os.environ["SUPABASE_SECRET_KEY"]
+        )
+
+        embedding_result = voyage.embed([query_tekst], model="voyage-3", input_type="query")
+        embedding = embedding_result.embeddings[0]
+
+        params = {"query_embedding": embedding, "match_count": antall}
+        if dokumenttype:
+            params["filter_dokumenttype"] = dokumenttype
+
+        response = supabase.rpc("match_dokumenter", params).execute()
+        return response.data or []
+
+    except Exception as e:
+        print(f"RAG-feil for oppslag '{query_tekst[:60]}': {e}")
+        return []
+
+
+def hent_rag_kontekst(brukerdata_kort):
+    """
+    Kjører RAG-oppslag for alle kapitler parallelt.
+    Returnerer formatert konteksttekst, eller tom streng hvis alt feiler.
+    """
+    try:
+        def hent_for_kapittel(kapittel_navn, søketekst):
+            full_query = f"{søketekst}. Prosjektkontekst: {brukerdata_kort}"
+            avsnitt = hent_relevante_avsnitt(full_query, dokumenttype="søknad", antall=3)
+            return kapittel_navn, avsnitt
+
+        resultater = {}
+        with ThreadPoolExecutor(max_workers=len(_KAPITLER_RAG)) as executor:
+            futures = {
+                executor.submit(hent_for_kapittel, navn, query): navn
+                for navn, query in _KAPITLER_RAG
+            }
+            for future in as_completed(futures, timeout=12):
+                try:
+                    navn, avsnitt = future.result()
+                    if avsnitt:
+                        resultater[navn] = avsnitt
+                except Exception as e:
+                    print(f"RAG-kapittel feilet: {e}")
+
+        if not resultater:
+            return ""
+
+        linjer = [
+            "## Stileksempler fra ekte konsesjonssøknader",
+            "",
+            "Bruk disse KUN som stilmal for språk og struktur — ikke kopier faktainnhold fra eksemplene inn i det nye prosjektet:",
+        ]
+        for kapittel, avsnitt_liste in resultater.items():
+            linjer.append(f"\n### {kapittel.capitalize()}")
+            for i, a in enumerate(avsnitt_liste, 1):
+                prosjekt = a.get("prosjekt") or "ukjent prosjekt"
+                tekst = (a.get("avsnitt_tekst") or "").strip()
+                if tekst:
+                    linjer.append(f"\n[Eksempel {i} – fra {prosjekt}]\n{tekst}")
+
+        return "\n".join(linjer)
+
+    except Exception as e:
+        print(f"RAG-kontekst feilet totalt: {e}")
+        return ""
+
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -267,13 +353,17 @@ class handler(BaseHTTPRequestHandler):
             summary = body.get("summary", "")
             original_message = body.get("original_message", "")
 
-            content = f"""Prosjektbeskrivelse fra søker:
-{original_message}
+            rag_kontekst = hent_rag_kontekst(original_message[:600])
 
-Bekreftet forståelse av prosjektet:
-{summary}
+            content_deler = [
+                f"Prosjektbeskrivelse fra søker:\n{original_message}",
+                f"Bekreftet forståelse av prosjektet:\n{summary}",
+            ]
+            if rag_kontekst:
+                content_deler.append(rag_kontekst)
+            content_deler.append("Skriv nå den fullstendige konsesjonssøknaden.")
 
-Skriv nå den fullstendige konsesjonssøknaden."""
+            content = "\n\n".join(content_deler)
 
             client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
             message = client.messages.create(
