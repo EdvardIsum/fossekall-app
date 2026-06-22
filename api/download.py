@@ -109,17 +109,17 @@ def _setup_header(section, anlegg):
         p.paragraph_format.space_before = Pt(0)
         p.paragraph_format.space_after = Pt(0)
 
-    tbl = header.add_table(rows=1, cols=2, width=Cm(16.5))
+    tbl = header.add_table(rows=1, cols=2, width=Cm(15))
     _no_borders(tbl)
     tbl.cell(0, 0).width = Cm(7)
-    tbl.cell(0, 1).width = Cm(9.5)
+    tbl.cell(0, 1).width = Cm(8)
 
-    # Logo venstre
+    # Logo venstre — 5.2cm for tydelig visning
     logo_p = tbl.cell(0, 0).paragraphs[0]
     logo_p.paragraph_format.space_before = Pt(0)
     logo_p.paragraph_format.space_after = Pt(0)
     if os.path.exists(LOGO_PATH):
-        logo_p.add_run().add_picture(LOGO_PATH, width=Cm(4.5))
+        logo_p.add_run().add_picture(LOGO_PATH, width=Cm(5.2))
     else:
         run = logo_p.add_run('BLÅFALL')
         run.bold = True
@@ -129,7 +129,7 @@ def _setup_header(section, anlegg):
     # Prosjektnavn høyre
     title_p = tbl.cell(0, 1).paragraphs[0]
     title_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    title_p.paragraph_format.space_before = Pt(10)
+    title_p.paragraph_format.space_before = Pt(12)
     title_p.paragraph_format.space_after = Pt(0)
     run = title_p.add_run(anlegg.upper())
     run.font.name = 'Calibri'
@@ -137,10 +137,12 @@ def _setup_header(section, anlegg):
     run.font.bold = True
     run.font.color.rgb = C_GREY
 
-    # Horisontal strek
+    # Horisontal strek — full bredde via negativ innrykk
     rule = header.add_paragraph()
-    rule.paragraph_format.space_before = Pt(4)
+    rule.paragraph_format.space_before = Pt(6)
     rule.paragraph_format.space_after = Pt(0)
+    rule.paragraph_format.left_indent = Cm(0)
+    rule.paragraph_format.right_indent = Cm(0)
     _pBdr(rule, 'bottom', '3d6e7f', 16)
 
 
