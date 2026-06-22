@@ -356,6 +356,74 @@
       transition: background .15s;
     }
     .btn-secondary:hover { background: #EEF3F4; }
+
+    /* ── Analyse form ──────────────────────────────────────────── */
+    .analyse-form-card {
+      background: #fff;
+      border: 1px solid rgba(45,101,121,.16); border-radius: 22px;
+      box-shadow: 0 24px 60px -34px rgba(29,67,80,.5), 0 2px 6px -2px rgba(29,67,80,.06);
+      overflow: hidden;
+    }
+    .analyse-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+      padding: 20px 20px 4px;
+    }
+    .analyse-field { padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; }
+    .analyse-label {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      letter-spacing: .18em; color: rgba(45,101,121,.6);
+      text-transform: uppercase;
+    }
+    .analyse-input {
+      border: 1px solid rgba(45,101,121,.18); border-radius: 10px;
+      padding: 10px 13px; font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px; color: #1d4350; background: #fff;
+      outline: none; width: 100%; box-sizing: border-box;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .analyse-input:focus { border-color: #2D6579; box-shadow: 0 0 0 3px rgba(45,101,121,.12); }
+    .analyse-input::placeholder { color: rgba(45,101,121,.3); }
+    .analyse-form-footer {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 20px 20px;
+    }
+    .analyse-hint {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      color: rgba(45,101,121,.45);
+    }
+    .analyse-result-card {
+      background: #fff; border: 1px solid rgba(45,101,121,.14);
+      border-radius: 18px; overflow: hidden;
+      box-shadow: 0 18px 44px -32px rgba(29,67,80,.45);
+    }
+    .analyse-result-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 18px; border-bottom: 1px solid rgba(45,101,121,.1);
+    }
+    .analyse-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      padding: 18px;
+    }
+    .analyse-stat {
+      background: #EEF3F4; border: 1px solid rgba(45,101,121,.1);
+      border-radius: 12px; padding: 14px 16px;
+    }
+    .analyse-stat-lbl {
+      font-family: 'Space Mono', monospace; font-size: 10.5px;
+      letter-spacing: .16em; text-transform: uppercase;
+      color: rgba(45,101,121,.6); margin-bottom: 5px;
+    }
+    .analyse-stat-val { font-size: 21px; font-weight: 600; color: #1d4350; line-height: 1.2; }
+    .analyse-stat-sub { font-size: 11.5px; color: rgba(45,101,121,.6); margin-top: 3px; }
+    .analyse-btn-teal {
+      display: flex; align-items: center; gap: 9px;
+      background: #2f6b73; color: #fff; border: none;
+      border-radius: 12px; padding: 13px 20px; cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 500;
+      transition: background .15s; box-shadow: 0 8px 18px -8px rgba(47,107,115,.55);
+    }
+    .analyse-btn-teal:hover { background: #255860; }
+    .analyse-btn-teal:disabled { opacity: .55; cursor: default; }
   </style>
 </head>
 <body>
@@ -538,6 +606,116 @@
 
     </div>
     <!-- /thread -->
+
+  </div>
+</section>
+
+<!-- Analyse section -->
+<section class="terminal-section" id="analyseSection" style="background: #dce6e9;">
+  <div class="terminal-content" id="analyseContent">
+
+    <div class="term-heading">
+      <div class="term-label-row">
+        <span class="term-diamond"></span>
+        <span class="term-label">ANALYSE</span>
+      </div>
+      <h1 class="term-h1">Analyser<br>prosjektet</h1>
+      <p class="term-sub">Koordinater og tekniske mål — vi henter hydrologidata, artsfunn og naturtyper automatisk.</p>
+    </div>
+
+    <!-- Form -->
+    <div id="analyseFormArea">
+      <div class="analyse-form-card">
+        <div class="analyse-grid">
+          <div class="analyse-field">
+            <label class="analyse-label" for="an_navn">Prosjektnavn</label>
+            <input class="analyse-input" type="text" id="an_navn" placeholder="Kastdalselvi kraftverk" />
+          </div>
+          <div class="analyse-field">
+            <label class="analyse-label" for="an_soker">Søker</label>
+            <input class="analyse-input" type="text" id="an_soker" placeholder="Grøvdal Kraft AS" />
+          </div>
+          <div class="analyse-field">
+            <label class="analyse-label" for="an_kommune">Kommune</label>
+            <input class="analyse-input" type="text" id="an_kommune" placeholder="Kvam herad" />
+          </div>
+          <div class="analyse-field">
+            <label class="analyse-label" for="an_fylke">Fylke</label>
+            <input class="analyse-input" type="text" id="an_fylke" placeholder="Vestland" />
+          </div>
+          <div class="analyse-field">
+            <label class="analyse-label" for="an_lat">Breddegrad (°N)</label>
+            <input class="analyse-input" type="number" id="an_lat" placeholder="60.445" step="0.001" />
+          </div>
+          <div class="analyse-field">
+            <label class="analyse-label" for="an_lon">Lengdegrad (°Ø)</label>
+            <input class="analyse-input" type="number" id="an_lon" placeholder="6.251" step="0.001" />
+          </div>
+          <div class="analyse-field">
+            <label class="analyse-label" for="an_fall">Fallhøyde (m)</label>
+            <input class="analyse-input" type="number" id="an_fall" placeholder="320" />
+          </div>
+          <div class="analyse-field">
+            <label class="analyse-label" for="an_nf">Nedbørfelt (km²)</label>
+            <input class="analyse-input" type="number" id="an_nf" placeholder="6.1" step="0.1" />
+          </div>
+        </div>
+        <div class="analyse-form-footer">
+          <button class="btn-primary" id="analyseBtn" onclick="runAnalyse()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+            Kjør analyse
+          </button>
+          <span class="analyse-hint">Hydrologi · Artsfunn · Produksjon</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Working state -->
+    <div id="analyseWorking" style="display:none;">
+      <div class="fossekall-row">
+        <div class="fk-avatar">
+          <img src="assets/mark.png" alt="Fossekall" />
+        </div>
+        <div class="fk-body">
+          <div class="fk-name">FOSSEKALL</div>
+          <p class="fk-intro">Henter data fra NVE, Artskart og Naturbase …</p>
+          <div class="steps-card" id="analyseStepsCard"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result state -->
+    <div id="analyseResult" style="display:none;">
+      <div class="fossekall-row">
+        <div class="fk-avatar">
+          <img src="assets/mark.png" alt="Fossekall" />
+        </div>
+        <div class="fk-body">
+          <div class="fk-name">FOSSEKALL</div>
+          <p class="fk-intro">Analysen er ferdig. Last ned rapporten eller fortsett til konsesjonssøknad.</p>
+          <div class="analyse-result-card">
+            <div class="analyse-result-header">
+              <div class="doc-icon-box" style="background:#2f6b73;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path><path d="M9 14l2 2 4-4"></path></svg>
+              </div>
+              <div class="doc-meta">
+                <div class="doc-title" id="analyseResultTitle">Analyserapport</div>
+                <div class="doc-sub">Hydrologi · Biologi · Produksjon</div>
+              </div>
+              <span class="doc-badge">FERDIG</span>
+            </div>
+            <div class="analyse-stats" id="analyseStats"></div>
+          </div>
+          <div class="action-btns">
+            <button class="analyse-btn-teal" id="lastNedRapportBtn" onclick="lastNedRapport()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"></path><path d="M6 11l6 6 6-6"></path><path d="M5 21h14"></path></svg>
+              Last ned rapport
+            </button>
+            <button class="btn-secondary" onclick="resetAnalyse()">Ny analyse</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </div>
 </section>
@@ -972,6 +1150,169 @@
   // ── Util ──────────────────────────────────────────────────────
   function escHtml(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Analyse section reveal ────────────────────────────────────
+  const analyseContent = document.getElementById('analyseContent');
+  if ('IntersectionObserver' in window) {
+    const aio = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { analyseContent.classList.add('visible'); aio.disconnect(); }
+      });
+    }, { threshold: 0.1 });
+    aio.observe(document.getElementById('analyseSection'));
+  }
+
+  // ── Analyse state ─────────────────────────────────────────────
+  let analyseData = null;
+  let analysePhase = 0;
+  let analyseTimer = null;
+
+  const ANALYSE_STEPS = [
+    'Kobler til NVE HydAPI',
+    'Søker i Artskart etter rødlistede arter',
+    'Henter naturtyper fra Naturbase',
+    'Beregner produksjonsestimat'
+  ];
+
+  async function runAnalyse() {
+    const lat = parseFloat(document.getElementById('an_lat').value);
+    const lon = parseFloat(document.getElementById('an_lon').value);
+    const fall = parseFloat(document.getElementById('an_fall').value);
+    const nf = parseFloat(document.getElementById('an_nf').value);
+
+    if (!lat || !lon || !fall || !nf) {
+      alert('Fyll inn koordinater, fallhøyde og nedbørfelt.');
+      return;
+    }
+
+    document.getElementById('analyseFormArea').style.display = 'none';
+    document.getElementById('analyseWorking').style.display = 'block';
+    document.getElementById('analyseResult').style.display = 'none';
+    analysePhase = 0;
+
+    const renderASteps = (done) => {
+      document.getElementById('analyseStepsCard').innerHTML = ANALYSE_STEPS.map((label, i) => {
+        const isDone = done || i < analysePhase;
+        const isActive = !done && i === analysePhase;
+        const isPending = !isDone && !isActive;
+        let icon = isDone ? '<span class="step-done">✓</span>'
+                 : isActive ? '<span class="step-spinner"></span>'
+                 : '<span class="step-pending"></span>';
+        const cls = 'step-label' + (isPending ? ' pending' : '');
+        return `<div class="step-row">${icon}<span class="${cls}">${escHtml(label)}</span></div>`;
+      }).join('');
+    };
+
+    renderASteps(false);
+    if (analyseTimer) clearInterval(analyseTimer);
+    analyseTimer = setInterval(() => {
+      if (analysePhase < ANALYSE_STEPS.length - 1) { analysePhase++; renderASteps(false); }
+    }, 900);
+
+    const body = {
+      vassdrag_navn: document.getElementById('an_navn').value.trim(),
+      soker: document.getElementById('an_soker').value.trim(),
+      kommune: document.getElementById('an_kommune').value.trim(),
+      fylke: document.getElementById('an_fylke').value.trim(),
+      lat, lon,
+      fallhoyde_m: fall,
+      nedborfelt_km2: nf,
+    };
+
+    try {
+      const resp = await fetch('/api/analyse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await resp.json();
+      clearInterval(analyseTimer);
+      analyseTimer = null;
+      renderASteps(true);
+
+      setTimeout(() => {
+        analyseData = data;
+        document.getElementById('analyseWorking').style.display = 'none';
+        document.getElementById('analyseResult').style.display = 'block';
+        document.getElementById('analyseResultTitle').textContent = data.prosjekt?.navn || 'Analyserapport';
+        renderAnalyseStats(data);
+      }, 500);
+    } catch (err) {
+      clearInterval(analyseTimer);
+      analyseTimer = null;
+      document.getElementById('analyseWorking').style.display = 'none';
+      document.getElementById('analyseFormArea').style.display = 'block';
+      alert('Analyse feilet: ' + (err.message || 'ukjent feil'));
+    }
+  }
+
+  function renderAnalyseStats(data) {
+    const h = data.hydrologi || {};
+    const b = data.biologi || {};
+    const pr = data.produksjon || {};
+
+    const fmt = (v, d = 2) => v != null ? v.toLocaleString('no-NO', { minimumFractionDigits: d, maximumFractionDigits: d }) : '–';
+
+    const stats = [
+      {
+        lbl: 'Middelvannføring',
+        val: h.ok ? fmt(h.mq_m3s, 3) + ' m³/s' : '–',
+        sub: h.ok ? `M95: ${fmt(h.m95_m3s, 3)} m³/s` : (h.feil || 'Ikke tilgjengelig'),
+      },
+      {
+        lbl: 'Rødlistede arter',
+        val: (b.totalt != null ? b.totalt : b.arter?.length ?? '–') + ' funn',
+        sub: `${b.naturtyper?.length ?? 0} naturtype-lokaliteter`,
+      },
+      {
+        lbl: 'Estimert produksjon',
+        val: pr.produksjon_gwh != null ? fmt(pr.produksjon_gwh, 1) + ' GWh/år' : '–',
+        sub: pr.installert_effekt_mw != null ? fmt(pr.installert_effekt_mw, 2) + ' MW · ' + (pr.kategori || '') : '',
+      },
+    ];
+
+    document.getElementById('analyseStats').innerHTML = stats.map(s => `
+      <div class="analyse-stat">
+        <div class="analyse-stat-lbl">${escHtml(s.lbl)}</div>
+        <div class="analyse-stat-val">${escHtml(s.val)}</div>
+        <div class="analyse-stat-sub">${escHtml(s.sub)}</div>
+      </div>
+    `).join('');
+  }
+
+  async function lastNedRapport() {
+    if (!analyseData) return;
+    const btn = document.getElementById('lastNedRapportBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="step-spinner" style="width:14px;height:14px;border-width:2px;"></span> Bygger rapport …';
+
+    try {
+      const resp = await fetch('/api/rapport', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(analyseData)
+      });
+      const html = await resp.text();
+      const w = window.open('', '_blank');
+      if (!w) { alert('Popup ble blokkert — tillat popups for denne siden.'); return; }
+      w.document.write(html);
+      w.document.close();
+    } catch (err) {
+      alert('Klarte ikke laste ned rapport: ' + (err.message || 'ukjent feil'));
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"></path><path d="M6 11l6 6 6-6"></path><path d="M5 21h14"></path></svg> Last ned rapport';
+    }
+  }
+
+  function resetAnalyse() {
+    if (analyseTimer) { clearInterval(analyseTimer); analyseTimer = null; }
+    analyseData = null;
+    analysePhase = 0;
+    document.getElementById('analyseResult').style.display = 'none';
+    document.getElementById('analyseWorking').style.display = 'none';
+    document.getElementById('analyseFormArea').style.display = 'block';
   }
 </script>
 </body>
