@@ -292,6 +292,13 @@ def render_content(doc, text):
 
         if s == '---':
             doc.add_page_break()
+        elif s.startswith('#### '):
+            p = doc.add_paragraph()
+            run = p.add_run(s[5:])
+            run.bold = True
+            run.font.name = 'Calibri'
+            run.font.size = Pt(11)
+            run.font.color.rgb = C_MID
         elif s.startswith('# '):
             doc.add_heading(s[2:], level=1)
         elif s.startswith('## '):
